@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Alert, Box, Container, Stack,Grid } from "@mui/material";
+import { Alert, Box, Container, Stack, Grid } from "@mui/material";
 import MovieFilter from "../components/MovieFilter";
 import MovieSearch from "../components/MovieSearch";
 import MovieList from "../components/MovieList";
@@ -8,6 +8,7 @@ import { FormProvider } from "../components/form";
 import { useForm } from "react-hook-form";
 import apiService from "../app/apiService";
 import LoadingScreen from "../components/LoadingScreen";
+import { set } from "lodash";
 
 const defaultValues = {
   genre: null,
@@ -18,9 +19,16 @@ function HomePage() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [page,setPage]= useState(1);
-  const [totalPages,setTotalPages]= useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
   const [filterMode, setFilterMode] = useState('search');
+
+  const [movieStores, setMovieStores] = useState({
+    fetchStutus: 'idle', // idle, loading, success, error
+    page: 1,
+    pageSize: 20,
+    movies: [],
+  });
 
   const methods = useForm({
     defaultValues,
@@ -33,7 +41,21 @@ function HomePage() {
       setLoading(true);
       try {
         setFilterMode('default')
+        setMovieStores(prev => {
+          return {
+            ...prev,
+            fetchStutus: 'loading'
+          }
+        })
         const res = await apiService.get("/3/discover/movie");
+        setMovieStores(prev => {
+          return {
+            ...prev,
+            movies: res.data.results,
+            fetchStutus: 'success'
+          }
+
+        })
         setMovies(res.data.results);
         setTotalPages(res.data.total_pages);
         setPage(1);
@@ -41,6 +63,12 @@ function HomePage() {
       } catch (error) {
         console.log(error);
         setError(error.message);
+        setMovieStores(prev => {
+          return {
+            ...prev,
+            fetchStutus: 'error'
+          }
+        })
       }
       setLoading(false);
     };
@@ -111,8 +139,8 @@ function HomePage() {
       } catch (error) {
         console.log(error);
         setError(error.message);
-      }  
-    }else {
+      }
+    } else {
       setLoading(true);
       try {
         const res = await apiService.get("/3/discover/movie", { params: { page } });
@@ -131,15 +159,15 @@ function HomePage() {
   }
 
   return (
-    <Container maxWidth="xl" style={{paddingTop:16}}>
+    <Container maxWidth="xl" style={{ paddingTop: 16 }}>
       <Grid container spacing={2}>
         <Grid item xs={3} >
           <FormProvider methods={methods}>
             <MovieFilter onGenreChange={handleOnGenreChange} />
           </FormProvider>
         </Grid>
-        <Grid item xs={9} > 
-        <FormProvider methods={methods} onSubmit={(e) => {e.preventDefault()}}>
+        <Grid item xs={9} >
+          <FormProvider methods={methods} onSubmit={(e) => { e.preventDefault() }}>
             <Stack
               spacing={2}
               direction={{ xs: "column", sm: "row" }}
@@ -147,27 +175,32 @@ function HomePage() {
               justifyContent="space-between"
               mb={2}
             >
-            <MovieSearch onSearchIconClick={searchMovies} onEnterPressed={searchMovies} />
-              
+              <MovieSearch onSearchIconClick={searchMovies} onEnterPressed={searchMovies} />
+
             </Stack>
-        </FormProvider>
+          </FormProvider>
 
-        <Box sx={{ position: "relative", height: 1 }}>
-          {loading ? (
-            <LoadingScreen />
-          ) : (
-            <>
-              {error ? (
-                <Alert severity="error">{error}</Alert>
-              ) : (
-                <MovieList movies={movies} />
-              )}
-            </>
-          )}
+          {["idle", "loading"].includes(movieStores.fetchStutus) && <LoadingScreen />}
+          {movieStores.fetchStutus === 'error' && <Alert severity="error">Something went wrong</Alert>}
+          {movieStores.fetchStutus === 'success' && <><MovieList movies={movies} />
+            <MoviePagination page={page} totalPages={totalPages} onPaginationChange={(_, page) => handleOnPaginationChange(page)} /></>}
 
-          <MoviePagination page={page} totalPages={totalPages} onPaginationChange={(_, page) => handleOnPaginationChange(page)} />
-        </Box>
-        
+          <Stack spacing={1}>
+            {loading ? (
+              <LoadingScreen />
+            ) : (
+              <>
+                {error ? (
+                  <Alert severity="error">{error}</Alert>
+                ) : (
+                  <MovieList movies={movies} />
+                )}
+              </>
+            )}
+
+
+          </Stack>
+
         </Grid>
       </Grid>
     </Container>

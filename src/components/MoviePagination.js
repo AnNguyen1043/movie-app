@@ -4,7 +4,7 @@ import Stack from '@mui/material/Stack';
 
 export default function MoviePagination({ page, totalPages, onPaginationChange }) {
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2} alignItems="center" >
       <Pagination page={page} count={totalPages} onChange={onPaginationChange} color="primary" />
     </Stack>
   );

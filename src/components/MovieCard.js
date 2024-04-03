@@ -14,10 +14,11 @@ function MovieCard({ movie }) {
           component="img"
           width="330"
           height="496"
+          loading="lazy"
           image={`https://image.tmdb.org/t/p/original/${movie.poster_path}`}
           alt="green iguana"
         />
-        
+
       </CardActionArea>
     </Card>
   );
