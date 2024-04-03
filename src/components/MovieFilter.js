@@ -1,29 +1,29 @@
 import { Stack, Typography } from "@mui/material";
-import { FRadioGroup } from "./form";
 import { useEffect, useState } from "react";
 import apiService from "../app/apiService";
+import { FRadioGroup } from "./form";
 
 
 function MovieFilter({ onGenreChange }) {
-  const [genres, setGenres]=useState([]);
+  const [genres, setGenres] = useState([]);
 
-  useEffect(()=>{
+  useEffect(() => {
     const getGenres = async () => {
       try {
         const res = await apiService.get("/3/genre/movie/list");
-        const mapped=res.data.genres.map(item=>{
-          return {value: item.id, label: item.name}
+        const mapped = res.data.genres.map(item => {
+          return { value: item.id, label: item.name }
         })
         setGenres(mapped);
-        
+
       } catch (error) {
         console.log(error);
-        
+
       }
     };
     getGenres();
 
-  },[])
+  }, [])
 
 
   return (
